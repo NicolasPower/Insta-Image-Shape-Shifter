@@ -7,6 +7,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState({});
   const [modifiedImageUrl, setModifiedImageUrl] = useState("");
+  const [imagePath, setImagePath] = useState(""); // Separate image path state
+  const [effectWord, setEffectWord] = useState(""); // Separate word state
 
   const handleSelectFile = (e) => setFile(e.target.files[0]);
 
@@ -17,6 +19,7 @@ function App() {
       data.append("my_file", file);
       const uploadRes = await axios.post("http://localhost:6060/upload", data);
       setRes(uploadRes.data);
+      setImagePath(uploadRes.data.public_id); // Set the image path
     } catch (error) {
       alert(error.message);
     } finally {
@@ -24,22 +27,28 @@ function App() {
     }
   }
 
-  useEffect(() => {
-    // Make an API call to your server to get the modified image URL
-    if (Object.keys(res).length > 0) {
-      axios.get(`http://localhost:6060/generateImageWithEffect/${res.public_id}`)
-        .then(response => {
-          setModifiedImageUrl(response.data.imageUrl);
-        })
-        .catch(error => console.error(error));
+  const handleApplyEffect = async () => {
+    if (imagePath && effectWord) {
+      try {
+        const effectResponse = await axios.get(
+          `http://localhost:6060/generateImageWithEffect?imagePath=${imagePath}&word=${effectWord}`
+        );
+        setModifiedImageUrl(effectResponse.data.imageUrl);
+      } catch (error) {
+        console.error(error);
+      }
     }
-  }, [res]);
+  }
+
+  useEffect(() => {
+    // You can use this effect for other purposes if needed
+  }, [imagePath]);
 
   return (
     <div className="App">
       <label htmlFor="file" className="btn-grey">
         {" "}
-        select file
+        Select file
       </label>
       {file && <center> {file.name}</center>}
       <input
@@ -47,6 +56,12 @@ function App() {
         type="file"
         onChange={handleSelectFile}
         multiple={false}
+      />
+      <input
+        type="text"
+        placeholder="Enter Effect Word"
+        value={effectWord}
+        onChange={(e) => setEffectWord(e.target.value)}
       />
       <code>
         {Object.keys(res).length > 0
@@ -63,7 +78,10 @@ function App() {
       {file && (
         <>
           <button onClick={handleUpload} className="btn-green">
-            {loading ? "uploading..." : "upload to Cloudinary"}
+            {loading ? "Uploading..." : "Upload to Cloudinary"}
+          </button>
+          <button onClick={handleApplyEffect} className="btn-blue">
+            Apply Effect
           </button>
         </>
       )}

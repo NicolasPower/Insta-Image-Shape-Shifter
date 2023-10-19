@@ -38,16 +38,16 @@ app.post("/upload", upload.single("my_file"), async (req, res) => {
   }
 });
 
-app.get("/generateImageWithEffect/:imagePath", (req, res) => {
-    const imagePath = req.params.imagePath; // Extract the image path from the URL parameter
-    const effect = "gen_remove:skull";
-  
-    // Generate the modified Cloudinary image URL with the specified effect
-    const modifiedImageUrl = cloudinary.url(imagePath, { effect: effect });
-  
-    res.json({ imageUrl: modifiedImageUrl });
-  });
-  
+app.get("/generateImageWithEffect", (req, res) => {
+  const imagePath = req.query.imagePath; // Extract the image path from the URL parameter
+  const effect = "gen_remove:"+req.query.word;
+
+  // Generate the modified Cloudinary image URL with the specified effect
+  const modifiedImageUrl = cloudinary.url(imagePath, { effect: effect });
+
+  res.json({ imageUrl: modifiedImageUrl });
+});
+
 
 const port = 6060;
 app.listen(port, () => {
