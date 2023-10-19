@@ -1,25 +1,39 @@
 import "./index.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 function App() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState({});
+  const [modifiedImageUrl, setModifiedImageUrl] = useState("");
+
   const handleSelectFile = (e) => setFile(e.target.files[0]);
+
   const handleUpload = async () => {
     try {
       setLoading(true);
       const data = new FormData();
       data.append("my_file", file);
-      const res = await axios.post("http://localhost:6060/upload", data);
-      setRes(res.data);
+      const uploadRes = await axios.post("http://localhost:6060/upload", data);
+      setRes(uploadRes.data);
     } catch (error) {
       alert(error.message);
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    // Make an API call to your server to get the modified image URL
+    if (Object.keys(res).length > 0) {
+      axios.get(`http://localhost:6060/generateImageWithEffect/${res.public_id}`)
+        .then(response => {
+          setModifiedImageUrl(response.data.imageUrl);
+        })
+        .catch(error => console.error(error));
+    }
+  }, [res]);
 
   return (
     <div className="App">
@@ -49,11 +63,15 @@ function App() {
       {file && (
         <>
           <button onClick={handleUpload} className="btn-green">
-            {loading ? "uploading..." : "upload to cloudinary"}
+            {loading ? "uploading..." : "upload to Cloudinary"}
           </button>
         </>
+      )}
+      {modifiedImageUrl && (
+        <img src={modifiedImageUrl} alt="Modified Image" />
       )}
     </div>
   );
 }
+
 export default App;
