@@ -29,13 +29,13 @@ app.post("/upload", upload.single("my_file"), async (req, res) => {
     const b64 = Buffer.from(req.file.buffer).toString("base64");
     let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
 
-    // handle upload - swap to uploading to s3 instead of cloudinary
-    // upload to folder called /uploads in s3 bucket
+    // CHAD handle upload - swap to uploading to s3 instead of cloudinary
+    // CHAD upload to folder called /uploads in s3 bucket
     const cldRes = await handleUpload(dataURI);
 
-    // enqueue transformation job to SQS
+    // CHAD enqueue transformation job to SQS
 
-    res.json(cldRes); // return ID/name of photo - probably use hashid or uuid
+    res.json(cldRes); // CHAD return ID/name of photo - probably use hashid or uuid
   } catch (error) {
     console.log(error);
     res.send({
@@ -44,22 +44,22 @@ app.post("/upload", upload.single("my_file"), async (req, res) => {
   }
 });
 
-// get route for checking if job is done
-// check if output of processing exists
-// app.get("status")
+// CHAD get route for checking if job is done
+// CHAD check if output of processing exists
+// CHAD app.get("status")
 
 app.get("/generateImageWithEffect", (req, res) => {
-  const imagePath = req.query.imagePath; // Extract the image path from the URL parameter
+  const imagePath = req.query.imagePath; // CHAD Extract the image path from the URL parameter
   const effect = "gen_remove:" + req.query.word;
 
-  // Generate the modified Cloudinary image URL with the specified effect
+  // CHAD Generate the modified Cloudinary image URL with the specified effect
   const modifiedImageUrl = cloudinary.url(imagePath, { effect: effect });
 
   res.json({ imageUrl: modifiedImageUrl });
 });
 
-// sqs processing
-//https://chat.openai.com/share/871ff1ef-bbd2-4775-a883-0b99d790a5ad
+// CHAD sqs processing
+// CHAD https://chat.openai.com/share/871ff1ef-bbd2-4775-a883-0b99d790a5ad
 
 const port = 6060;
 app.listen(port, () => {
