@@ -1,20 +1,19 @@
 require("dotenv").config();
 const express = require("express");
-const cloudinary = require("cloudinary").v2;
 const cors = require("cors");
 const Multer = require("multer");
+const AWS = require("aws-sdk");
+const sharp = require("sharp");
+const { v4: uuidv4 } = require("uuid");
+const port = 6060;
+let sqsQueueUrl;
+AWS.config.update({ region: "ap-southeast-2" });
 
-cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET,
-});
-async function handleUpload(file) {
-  const res = await cloudinary.uploader.upload(file, {
-    resource_type: "auto",
-  });
-  return res;
-}
+// AWS S3 Configuration
+const s3 = new AWS.S3();
+
+// AWS SQS Configuration
+const sqs = new AWS.SQS();
 
 const storage = new Multer.memoryStorage();
 const upload = Multer({
@@ -26,16 +25,31 @@ app.use(cors());
 
 app.post("/upload", upload.single("my_file"), async (req, res) => {
   try {
-    const b64 = Buffer.from(req.file.buffer).toString("base64");
-    let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+    const fileBuffer = req.file.buffer;
 
-    // CHAD handle upload - swap to uploading to s3 instead of cloudinary
-    // CHAD upload to folder called /uploads in s3 bucket
-    const cldRes = await handleUpload(dataURI);
+    // Generate a unique filename using uuid
+    const filename = uuidv4();
 
-    // CHAD enqueue transformation job to SQS
+    // Upload to S3
+    await s3
+      .putObject({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `uploads/${filename}`,
+        Body: fileBuffer,
+        ContentType: req.file.mimetype,
+      })
+      .promise();
 
-    res.json(cldRes); // CHAD return ID/name of photo - probably use hashid or uuid
+    // Enqueue transformation job to SQS
+    const sqsParams = {
+      MessageBody: JSON.stringify({
+        filename: filename,
+      }),
+      QueueUrl: sqsQueueUrl,
+    };
+    await sqs.sendMessage(sqsParams).promise();
+
+    res.json({ photoId: filename });
   } catch (error) {
     console.log(error);
     res.send({
@@ -44,24 +58,120 @@ app.post("/upload", upload.single("my_file"), async (req, res) => {
   }
 });
 
-// CHAD get route for checking if job is done
-// CHAD check if output of processing exists
-// CHAD app.get("status")
-
-app.get("/generateImageWithEffect", (req, res) => {
-  const imagePath = req.query.imagePath; // CHAD Extract the image path from the URL parameter
-  const effect = "gen_remove:" + req.query.word;
-
-  // CHAD Generate the modified Cloudinary image URL with the specified effect
-  const modifiedImageUrl = cloudinary.url(imagePath, { effect: effect });
-
-  res.json({ imageUrl: modifiedImageUrl });
+app.get("/status/:id", async (req, res) => {
+  // You can use S3's object existence check or other logic to verify if processing is done
+  // For this example, we're checking if the processed image exists on S3
+  try {
+    await s3
+      .headObject({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `processed/${req.params.id}`,
+      })
+      .promise();
+    res.json({ status: "done" });
+  } catch (error) {
+    res.json({ status: "pending" });
+  }
 });
 
-// CHAD sqs processing
-// CHAD https://chat.openai.com/share/871ff1ef-bbd2-4775-a883-0b99d790a5ad
+const processSQSMessages = async () => {
+  try {
+    const messages = await sqs
+      .receiveMessage({
+        QueueUrl: sqsQueueUrl,
+        MaxNumberOfMessages: 10, // Change as needed
+        WaitTimeSeconds: 20, // Long polling
+      })
+      .promise();
 
-const port = 6060;
-app.listen(port, () => {
-  console.log(`Server Listening on ${port}`);
-});
+    if (messages.Messages) {
+      for (const message of messages.Messages) {
+        const body = JSON.parse(message.Body);
+        const filename = body.filename;
+
+        // Download the image from S3
+        const s3Data = await s3
+          .getObject({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: `uploads/${filename}`,
+          })
+          .promise();
+
+        // Process the image using Sharp (e.g., resize)
+        const processedImage = await sharp(s3Data.Body)
+          .resize(300, 300) // Example: resize to 300x300. Adjust as needed.
+          .toBuffer();
+
+        // Upload the processed image back to S3, for this example, in a 'processed' directory
+        await s3
+          .putObject({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: `processed/${filename}`,
+            Body: processedImage,
+          })
+          .promise();
+
+        // Delete the message from the queue
+        await sqs
+          .deleteMessage({
+            QueueUrl: sqsQueueUrl,
+            ReceiptHandle: message.ReceiptHandle,
+          })
+          .promise();
+      }
+    }
+  } catch (error) {
+    console.error("Error processing SQS message:", error);
+  }
+};
+
+const ensureBucketExists = async (bucketName) => {
+  try {
+    await s3.createBucket({ Bucket: bucketName }).promise();
+    console.log(`Created bucket: ${bucketName}`);
+  } catch (err) {
+    // We will ignore 409 errors which indicate that the bucket already exists
+    if (err.statusCode !== 409) {
+      console.log(`Error creating bucket: ${err}`);
+    } else {
+      console.log(`Bucket ${bucketName} already exists.`);
+    }
+  }
+};
+
+const ensureQueueExists = async (queueName) => {
+  try {
+    const result = await sqs.getQueueUrl({ QueueName: queueName }).promise();
+    console.log(`Queue ${queueName} exists at URL ${result.QueueUrl}`);
+    sqsQueueUrl = result.QueueUrl;
+  } catch (error) {
+    if (error.code === "AWS.SimpleQueueService.NonExistentQueue") {
+      const result = await sqs.createQueue({ QueueName: queueName }).promise();
+      console.log(`Queue ${queueName} created at URL ${result.QueueUrl}`);
+      sqsQueueUrl = result.QueueUrl;
+    } else {
+      throw error;
+    }
+  }
+};
+
+// Initialize resources and start the server
+const initAndStartServer = async () => {
+  try {
+    // Ensure resources exist
+    await ensureBucketExists(process.env.S3_BUCKET_NAME);
+    await ensureQueueExists(process.env.SQS_QUEUE_NAME);
+
+    // Start the server
+    app.listen(port, () => {
+      console.log(`Server Listening on ${port}`);
+    });
+
+    // Set an interval to poll SQS and process messages
+    setInterval(processSQSMessages, 30000); // Poll every 30 seconds, adjust as needed
+  } catch (error) {
+    console.error("Error initializing resources:", error);
+  }
+};
+
+initAndStartServer();
