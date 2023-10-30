@@ -9,26 +9,32 @@ import { faCamera } from "@fortawesome/free-solid-svg-icons";
 function App() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [photoId, setPhotoId] = useState(""); // Using photoId instead of imagePath
+  const [photoId, setPhotoId] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [originalUrl, setOriginalUrl] = useState("");
+  const [processing, setProcessing] = useState(false);
 
   const handleSelectFile = (e) => {
-    setFile(e.target.files[0]);
-    setOriginalUrl(URL.createObjectURL(e.target.files[0])); // Add this line
+    const files = e.target.files;
+    if (files && files.length > 0 && files[0] instanceof Blob) {
+      setFile(files[0]);
+      setOriginalUrl(URL.createObjectURL(files[0]));
+      setImageUrl(""); // Reset the imageUrl state
+    } else {
+      console.error("No valid file selected");
+    }
   };
 
   const handleUpload = async () => {
     try {
-      setLoading(true);
+      setProcessing(true);
       const data = new FormData();
       data.append("my_file", file);
       const uploadRes = await axios.post("http://localhost:6060/upload", data);
       setPhotoId(uploadRes.data.photoId);
     } catch (error) {
       alert(error.message);
-    } finally {
-      setLoading(false);
+      setProcessing(false);
     }
   };
 
@@ -41,13 +47,24 @@ function App() {
         setImageUrl(
           `https://katenics3.s3.ap-southeast-2.amazonaws.com/processed/${photoId}`
         );
+        setProcessing(false);
       } else {
-        setTimeout(checkImageStatus, 5000); // Retry after 5 seconds if still pending
+        setTimeout(checkImageStatus, 5000);
       }
     } catch (error) {
       console.error(error);
+      setProcessing(false); // Reset processing in case of an error
     }
   };
+
+  function downloadImage(url) {
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = ""; // This ensures a download prompt, the file will have its original name.
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  }
 
   useEffect(() => {
     if (photoId) {
@@ -64,9 +81,18 @@ function App() {
           )}
         </div>
         <div className="col-md-6">
-          {imageUrl && (
+          {imageUrl ? (
             <img src={imageUrl} alt="Processed Image" className="img-fluid" />
-          )}
+          ) : processing ? (
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{ height: "300px" }}
+            >
+              <div className="spinner-border" role="status">
+                <span className="sr-only">Loading...</span>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -76,27 +102,42 @@ function App() {
         </div>
       )}
 
-      <div className="mb-3 d-flex justify-content-end mt-2">
-        <label htmlFor="file" className="btn btn-secondary mr-2">
-          {originalUrl || imageUrl ? "Reselect Image" : "Select Image"}
-        </label>
-        <input
-          id="file"
-          type="file"
-          onChange={handleSelectFile}
-          multiple={false}
-          className="form-control d-none"
-        />
-        {file && (
-          <button
-            onClick={handleUpload}
-            className={
-              loading ? "btn btn-success ml-2" : "btn btn-primary ml-2"
-            }
-          >
-            {loading ? "Resizing..." : "Resize Image"}
-          </button>
-        )}
+      <div className="container-class-name">
+        {" "}
+        {/* This should be the main container of your app */}
+        {/* Other content of your app (e.g., images) goes here */}
+        <div className="buttons-container d-flex justify-content-center align-items-center">
+          <label htmlFor="file" className="btn btn-secondary mr-2">
+            {originalUrl || imageUrl ? "Reselect Image" : "Select Image"}
+          </label>
+          <input
+            id="file"
+            type="file"
+            onChange={handleSelectFile}
+            multiple={false}
+            className="form-control d-none"
+          />
+          {file && (
+            <button
+              onClick={handleUpload}
+              className={
+                processing ? "btn btn-success ml-2" : "btn btn-primary ml-2"
+              }
+              disabled={processing}
+            >
+              {processing ? "Resizing..." : "Resize Image"}
+            </button>
+          )}
+
+          {imageUrl && (
+            <button
+              onClick={() => downloadImage(imageUrl)}
+              className="btn btn-info ml-2"
+            >
+              Download Image
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

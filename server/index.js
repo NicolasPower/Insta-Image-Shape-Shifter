@@ -99,7 +99,7 @@ const processSQSMessages = async () => {
 
         // Process the image using Sharp (e.g., resize)
         const processedImage = await sharp(s3Data.Body)
-          .resize(300, 300) // Example: resize to 300x300. Adjust as needed.
+          .resize(1080, 1920) // Example: resize to 300x300. Adjust as needed.
           .toBuffer();
 
         // Upload the processed image back to S3, for this example, in a 'processed' directory

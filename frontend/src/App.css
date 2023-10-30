@@ -14,60 +14,45 @@
 }
 
 html {
-  background-color: #0f0522; /* or your desired color */
+  background-color: #0f0522;
   height: 100%;
-  margin: 0; /* To reset any default margin */
+  margin: 0;
 }
 
 .image-placeholder {
   width: 100%;
-  height: 80%; /* Or whatever height you want */
+  height: 80%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f2f2f2; /* Light gray background or any other background */
-  border: 2px dashed #ccc; /* Dashed border around the placeholder */
-  border-radius: 15px; /* Optional: Rounded corners */
+  background: #f2f2f2;
+  border: 2px dashed #ccc;
+  border-radius: 15px;
 }
 
 .img-fluid {
-  max-width: 100%; /* Already included for responsive images, ensures image doesn't exceed container width */
-  max-height: 500px; /* Adjust as per your requirements */
+  max-width: 100%;
+  max-height: 500px;
   display: block;
-  margin: 0 auto; /* This will center the image horizontally */
+  margin: 0 auto;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Styling for the buttons to ensure they sit at the bottom */
+.buttons-container {
+  position: absolute;
+  bottom: 10px; /* or however far from the bottom you want */
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 10px; /* Will ensure buttons are 10px apart */
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* Ensure the buttons are the same size */
+.btn {
+  width: max-content;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.App {
+  /* ...existing properties... */
+  position: relative; /* This will make sure the absolute positioning of children is relative to this container */
+  padding-bottom: 50px; /* Provides space for the buttons */
 }
