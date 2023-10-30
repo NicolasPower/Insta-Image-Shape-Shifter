@@ -19,7 +19,7 @@ function App() {
     if (files && files.length > 0 && files[0] instanceof Blob) {
       setFile(files[0]);
       setOriginalUrl(URL.createObjectURL(files[0]));
-      setImageUrl(""); // Reset the imageUrl state
+      setImageUrl("");
     } else {
       console.error("No valid file selected");
     }
@@ -53,14 +53,14 @@ function App() {
       }
     } catch (error) {
       console.error(error);
-      setProcessing(false); // Reset processing in case of an error
+      setProcessing(false);
     }
   };
 
   function downloadImage(url) {
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = ""; // This ensures a download prompt, the file will have its original name.
+    anchor.download = "";
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
@@ -73,70 +73,78 @@ function App() {
   }, [photoId]);
 
   return (
-    <div className="App container mt-5">
-      <div className="row mt-4">
-        <div className="col-md-6">
-          {originalUrl && (
-            <img src={originalUrl} alt="Original Image" className="img-fluid" />
-          )}
-        </div>
-        <div className="col-md-6">
-          {imageUrl ? (
-            <img src={imageUrl} alt="Processed Image" className="img-fluid" />
-          ) : processing ? (
-            <div
-              className="d-flex justify-content-center align-items-center"
-              style={{ height: "300px" }}
-            >
-              <div className="spinner-border" role="status">
-                <span className="sr-only">Loading...</span>
+    <div>
+      <h1>Insta Story Shape Shifter</h1>
+      <p>
+        Upload any image and we will resize it to fit the 9:16 Instagram story
+      </p>
+      <div className="App container mt-5">
+        <div className="row mt-4">
+          <div className="col-md-6">
+            {originalUrl && (
+              <img
+                src={originalUrl}
+                alt="Original Image"
+                className="img-fluid"
+              />
+            )}
+          </div>
+          <div className="col-md-6">
+            {imageUrl ? (
+              <img src={imageUrl} alt="Processed Image" className="img-fluid" />
+            ) : processing ? (
+              <div
+                className="d-flex justify-content-center align-items-center"
+                style={{ height: "300px" }}
+              >
+                <div className="spinner-border" role="status">
+                  <span className="sr-only">Loading...</span>
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      {!originalUrl && !imageUrl && (
-        <div className="mt-4 image-placeholder">
-          <FontAwesomeIcon icon={faCamera} size="3x" />
-        </div>
-      )}
+        {!originalUrl && !imageUrl && (
+          <div className="mt-4 image-placeholder">
+            <FontAwesomeIcon icon={faCamera} size="3x" />
+          </div>
+        )}
 
-      <div className="container-class-name">
-        {" "}
-        {/* This should be the main container of your app */}
-        {/* Other content of your app (e.g., images) goes here */}
-        <div className="buttons-container d-flex justify-content-center align-items-center">
-          <label htmlFor="file" className="btn btn-secondary mr-2">
-            {originalUrl || imageUrl ? "Reselect Image" : "Select Image"}
-          </label>
-          <input
-            id="file"
-            type="file"
-            onChange={handleSelectFile}
-            multiple={false}
-            className="form-control d-none"
-          />
-          {file && (
-            <button
-              onClick={handleUpload}
-              className={
-                processing ? "btn btn-success ml-2" : "btn btn-primary ml-2"
-              }
-              disabled={processing}
-            >
-              {processing ? "Resizing..." : "Resize Image"}
-            </button>
-          )}
+        <div className="container-class-name">
+          <div className="buttons-container d-flex justify-content-center align-items-center">
+            <label htmlFor="file" className="btn btn-secondary mr-2">
+              {originalUrl || imageUrl ? "Reselect Image" : "Select Image"}
+            </label>
+            <input
+              id="file"
+              type="file"
+              onChange={handleSelectFile}
+              multiple={false}
+              accept=".jpeg, .jpg"
+              className="form-control d-none"
+            />
+            {file && (
+              <button
+                onClick={handleUpload}
+                className={
+                  processing ? "btn btn-success ml-2" : "btn btn-primary ml-2"
+                }
+                disabled={processing}
+              >
+                {processing ? "Resizing..." : "Resize Image"}
+              </button>
+            )}
 
-          {imageUrl && (
-            <button
-              onClick={() => downloadImage(imageUrl)}
-              className="btn btn-info ml-2"
-            >
-              Download Image
-            </button>
-          )}
+            {imageUrl && (
+              <button
+                onClick={() => downloadImage(imageUrl)}
+                className="btn btn-info ml-2"
+              >
+                Download Image
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

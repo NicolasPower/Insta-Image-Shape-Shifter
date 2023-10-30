@@ -1,16 +1,22 @@
 #root {
   background-color: #0f0522;
+  text-align: center;
+  color: white;
+  padding-top: 20px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 600;
 }
 
 .App {
   text-align: center;
-  background-color: #ffffff;
+  background-color: white;
   border-radius: 15px;
-  margin: 5% auto;
   width: 80%;
   height: 80vh;
   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
   overflow: auto;
+  position: relative;
+  padding-bottom: 50px;
 }
 
 html {
@@ -37,22 +43,20 @@ html {
   margin: 0 auto;
 }
 
-/* Styling for the buttons to ensure they sit at the bottom */
 .buttons-container {
   position: absolute;
-  bottom: 10px; /* or however far from the bottom you want */
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  gap: 10px; /* Will ensure buttons are 10px apart */
+  gap: 10px;
 }
 
-/* Ensure the buttons are the same size */
 .btn {
   width: max-content;
 }
-
-.App {
-  /* ...existing properties... */
-  position: relative; /* This will make sure the absolute positioning of children is relative to this container */
-  padding-bottom: 50px; /* Provides space for the buttons */
+.fa-camera {
+  color: #0f0522;
+}
+.spinner-border {
+  color: #0f0522;
 }
