@@ -78,38 +78,48 @@ function App() {
       <p>
         Upload any image and we will resize it to fit the 9:16 Instagram story
       </p>
-      <div className="App container mt-5">
+      <div className="App container">
         <div className="row mt-4">
-          <div className="col-md-6">
-            {originalUrl && (
-              <img
-                src={originalUrl}
-                alt="Original Image"
-                className="img-fluid"
-              />
-            )}
-          </div>
-          <div className="col-md-6">
-            {imageUrl ? (
-              <img src={imageUrl} alt="Processed Image" className="img-fluid" />
-            ) : processing ? (
-              <div
-                className="d-flex justify-content-center align-items-center"
-                style={{ height: "300px" }}
-              >
-                <div className="spinner-border" role="status">
-                  <span className="sr-only">Loading...</span>
+          {originalUrl || imageUrl ? (
+            <>
+              <div className="col-md-6">
+                <div className="image-container">
+                  {originalUrl && (
+                    <img
+                      src={originalUrl}
+                      alt="Original Image"
+                      className="img-fluid"
+                    />
+                  )}
                 </div>
               </div>
-            ) : null}
-          </div>
+              <div className="col-md-6">
+                <div className="image-container">
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt="Processed Image"
+                      className="img-fluid"
+                    />
+                  ) : processing ? (
+                    <div
+                      className="d-flex justify-content-center align-items-center"
+                      style={{ height: "300px" }}
+                    >
+                      <div className="spinner-border" role="status">
+                        <span className="sr-only">Loading...</span>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="col-12 mt-4 image-placeholder">
+              <FontAwesomeIcon icon={faCamera} size="3x" />
+            </div>
+          )}
         </div>
-
-        {!originalUrl && !imageUrl && (
-          <div className="mt-4 image-placeholder">
-            <FontAwesomeIcon icon={faCamera} size="3x" />
-          </div>
-        )}
 
         <div className="container-class-name">
           <div className="buttons-container d-flex justify-content-center align-items-center">

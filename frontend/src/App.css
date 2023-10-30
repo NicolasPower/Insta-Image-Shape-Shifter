@@ -26,9 +26,10 @@ html {
 }
 
 .image-placeholder {
-  width: 100%;
-  height: 80%;
+  max-width: 95% !important;
+  height: 65vh;
   display: flex;
+  margin: auto;
   align-items: center;
   justify-content: center;
   background: #f2f2f2;
@@ -59,4 +60,11 @@ html {
 }
 .spinner-border {
   color: #0f0522;
+}
+
+.image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 65vh;
 }
