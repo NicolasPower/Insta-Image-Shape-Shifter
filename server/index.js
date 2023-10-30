@@ -26,7 +26,7 @@ app.use(cors());
 app.post("/upload", upload.single("my_file"), async (req, res) => {
   try {
     const fileBuffer = req.file.buffer;
-
+    const format = req.body.format;
     // Generate a unique filename using uuid
     const filename = uuidv4();
 
@@ -44,6 +44,7 @@ app.post("/upload", upload.single("my_file"), async (req, res) => {
     const sqsParams = {
       MessageBody: JSON.stringify({
         filename: filename,
+        format: format,
       }),
       QueueUrl: sqsQueueUrl,
     };
@@ -74,6 +75,19 @@ app.get("/status/:id", async (req, res) => {
   }
 });
 
+const determineDimensions = (format) => {
+  switch (format) {
+    case "1:1 Square":
+      return { width: 1080, height: 1080 };
+    case "4:5 Portrait":
+      return { width: 864, height: 1080 };
+    case "16:9 Landscape":
+      return { width: 1920, height: 1080 };
+    default:
+      return { width: 1080, height: 1920 }; // Defaults to '9:16 Instagram Story'
+  }
+};
+
 const processSQSMessages = async () => {
   try {
     const messages = await sqs
@@ -88,7 +102,8 @@ const processSQSMessages = async () => {
       for (const message of messages.Messages) {
         const body = JSON.parse(message.Body);
         const filename = body.filename;
-
+        const format = body.format;
+        const dimensions = determineDimensions(format);
         // Download the image from S3
         const s3Data = await s3
           .getObject({
@@ -99,7 +114,7 @@ const processSQSMessages = async () => {
 
         // Process the image using Sharp (e.g., resize)
         const processedImage = await sharp(s3Data.Body)
-          .resize(1080, 1920) // Example: resize to 300x300. Adjust as needed.
+          .resize(dimensions.width, dimensions.height)
           .toBuffer();
 
         // Upload the processed image back to S3, for this example, in a 'processed' directory

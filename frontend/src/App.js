@@ -13,6 +13,7 @@ function App() {
   const [imageUrl, setImageUrl] = useState("");
   const [originalUrl, setOriginalUrl] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState("9:16 Instagram Story");
 
   const handleSelectFile = (e) => {
     const files = e.target.files;
@@ -30,6 +31,7 @@ function App() {
       setProcessing(true);
       const data = new FormData();
       data.append("my_file", file);
+      data.append("format", selectedFormat);
       const uploadRes = await axios.post("http://localhost:6060/upload", data);
       setPhotoId(uploadRes.data.photoId);
     } catch (error) {
@@ -83,6 +85,12 @@ function App() {
           {originalUrl || imageUrl ? (
             <>
               <div className="col-md-6">
+                <p
+                  className="text-center img-title"
+                  style={{ marginBottom: 8 }}
+                >
+                  Original Image
+                </p>
                 <div className="image-container">
                   {originalUrl && (
                     <img
@@ -94,7 +102,29 @@ function App() {
                 </div>
               </div>
               <div className="col-md-6">
-                <div className="image-container">
+                <div className="d-flex justify-content-center align-items-center">
+                  <p
+                    className="mr-3 img-title"
+                    style={{ marginBottom: 0, marginRight: "10px" }}
+                  >
+                    Processed Image
+                  </p>
+                  {file && (
+                    <select
+                      value={selectedFormat}
+                      onChange={(e) => setSelectedFormat(e.target.value)}
+                      style={{ verticalAlign: "middle" }}
+                    >
+                      <option value="9:16 Instagram Story">
+                        9:16 Instagram Story
+                      </option>
+                      <option value="1:1 Square">1:1 Square</option>
+                      <option value="4:5 Portrait">4:5 Portrait</option>
+                      <option value="16:9 Landscape">16:9 Landscape</option>
+                    </select>
+                  )}
+                </div>
+                <div className="image-container mt-2">
                   {imageUrl ? (
                     <img
                       src={imageUrl}
@@ -134,6 +164,7 @@ function App() {
               accept=".jpeg, .jpg"
               className="form-control d-none"
             />
+
             {file && (
               <button
                 onClick={handleUpload}

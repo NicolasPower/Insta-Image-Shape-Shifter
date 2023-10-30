@@ -67,4 +67,9 @@ html {
   justify-content: center;
   align-items: center;
   height: 65vh;
+  background-color: #ffffff;
+}
+
+.img-title {
+  color: black;
 }
