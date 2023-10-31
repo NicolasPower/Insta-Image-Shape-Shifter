@@ -38,8 +38,9 @@ html {
 }
 
 .img-fluid {
-  max-width: 100%;
-  max-height: 500px;
+  max-width: 100%; /* Ensures the image doesn't overflow horizontally */
+  height: auto; /* Maintains the aspect ratio while resizing */
+  max-height: 100%; /* Ensures the image doesn't overflow vertically */
   display: block;
   margin: 0 auto;
 }
