@@ -33,7 +33,7 @@ html {
   align-items: center;
   justify-content: center;
   background: #f2f2f2;
-  border: 2px dashed #ccc;
+  border: 2px dashed #0f0522;
   border-radius: 15px;
 }
 
@@ -67,7 +67,8 @@ html {
   justify-content: center;
   align-items: center;
   height: 65vh;
-  background-color: #ffffff;
+  background-color: #f2f2f2;
+  border: 2px dashed #f2f2f2;
 }
 
 .img-title {

@@ -29,6 +29,7 @@ function App() {
   const handleUpload = async () => {
     try {
       setProcessing(true);
+      setImageUrl("");
       const data = new FormData();
       data.append("my_file", file);
       data.append("format", selectedFormat);
@@ -146,7 +147,7 @@ function App() {
             </>
           ) : (
             <div className="col-12 mt-4 image-placeholder">
-              <FontAwesomeIcon icon={faCamera} size="3x" />
+              <FontAwesomeIcon icon={faCamera} size="5x" />
             </div>
           )}
         </div>
