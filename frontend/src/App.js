@@ -6,10 +6,11 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "font-awesome/css/font-awesome.min.css";
 import { faCamera } from "@fortawesome/free-solid-svg-icons";
+import JSZip from "jszip";
+
 
 function App() {
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [photoId, setPhotoId] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [originalUrl, setOriginalUrl] = useState("");
@@ -113,15 +114,43 @@ function App() {
       setProcessing(false);
     }
   };
+
+  function downloadImages(urls) {
+    const zip = new JSZip();
+    const downloadPromises = [];
   
-  function downloadImage(url) {
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "";
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
+    urls.forEach((photoId, index) => {
+      const downloadPromise = axios.get(`http://localhost:6060/fetchImage/${photoId}`, {
+        responseType: 'blob',
+      })
+      .then((response) => {
+        const blob = new Blob([response.data], { type: 'image/jpeg' });
+        const fileName = `image_${index}.jpeg`;
+        zip.file(fileName, blob);
+      })
+      .catch((error) => {
+        console.error(`Error downloading image for photoId ${photoId}: ${error}`);
+      });
+  
+      downloadPromises.push(downloadPromise);
+    });
+  
+    Promise.all(downloadPromises)
+      .then(() => {
+        zip.generateAsync({ type: "blob" }).then((content) => {
+          const zipFile = URL.createObjectURL(content);
+  
+          const anchor = document.createElement("a");
+          anchor.href = zipFile;
+          anchor.download = `resized_images.zip`;
+          document.body.appendChild(anchor);
+          anchor.click();
+          document.body.removeChild(anchor);
+        });
+      });
   }
+  
+  
 
   useEffect(() => {
     if (photoId) {
@@ -152,7 +181,7 @@ function App() {
                   {originalUrl && (
                     <img
                       src={originalUrl}
-                      alt="Original Image"
+                      alt="Original"
                       className="img-fluid"
                     />
                   )}
@@ -185,7 +214,7 @@ function App() {
                   {imageUrl ? (
                     <img
                       src={imageUrl[0]}
-                      alt="Processed Image"
+                      alt="Processed"
                       className="img-fluid"
                     />
                   ) : processing ? (
@@ -236,7 +265,7 @@ function App() {
 
             {imageUrl && (
               <button
-                onClick={() => downloadImage(imageUrl[0])}
+                onClick={() => downloadImages(photoId)}
                 className="btn btn-info ml-2"
               >
                 Download Image

@@ -1,4 +1,5 @@
 require("dotenv").config();
+const axios = require("axios")
 const express = require("express");
 const cors = require("cors");
 const Multer = require("multer");
@@ -73,6 +74,24 @@ app.get("/status/:id", async (req, res) => {
   } catch (error) {
     res.json({ status: "pending" });
   }
+});
+
+app.get("/fetchImage/:id", (req, res) => {
+  const s3Url = `https://katenics3.s3.ap-southeast-2.amazonaws.com/processed/${req.params.id}`;
+  
+  axios({
+    method: "get",
+    url: s3Url,
+    responseType: "stream", // Set the response type to stream
+  })
+    .then(response => {
+      res.setHeader("Content-Type", "image/jpeg");
+      response.data.pipe(res); // Pipe the response directly to the Express response
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send("Error fetching image from S3.");
+    });
 });
 
 const determineDimensions = (format) => {
