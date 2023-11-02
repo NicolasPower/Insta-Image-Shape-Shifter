@@ -2,6 +2,7 @@ import "./App.css";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "font-awesome/css/font-awesome.min.css";
 import { faCamera } from "@fortawesome/free-solid-svg-icons";
@@ -14,18 +15,6 @@ function App() {
   const [originalUrl, setOriginalUrl] = useState("");
   const [processing, setProcessing] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState("9:16 Instagram Story");
-
-  // const handleSelectFile = (e) => {
-  //   const files = e.target.files;
-  //   if (files && files.length > 0 && files[0] instanceof Blob) {
-  //     console.log(files)
-  //     setFile(files[0]);
-  //     setOriginalUrl(URL.createObjectURL(files[0]));
-  //     setImageUrl("");
-  //   } else {
-  //     console.error("No valid file selected");
-  //   }
-  // };
 
   const handleSelectFile = (e) => {
     const files = e.target.files;
@@ -65,7 +54,6 @@ function App() {
         data.append("format", selectedFormat);
         
         const uploadRes = await axios.post("http://localhost:6060/upload", data);
-        console.log(data)
         photoIds.push(uploadRes.data.photoId);
       }
       
@@ -76,16 +64,47 @@ function App() {
     }
   };
 
+  // const checkImageStatus = async () => {
+  //   try {
+  //     const statusRes = await axios.get(
+  //       `http://localhost:6060/status/${photoId}`
+  //     );
+  //     if (statusRes.data.status === "done") {
+  //       setImageUrl(
+  //         `https://katenics3.s3.ap-southeast-2.amazonaws.com/processed/${photoId}`
+  //       );
+  //       setProcessing(false);
+  //     } else {
+  //       setTimeout(checkImageStatus, 5000);
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //     setProcessing(false);
+  //   }
+  // };
+
   const checkImageStatus = async () => {
     try {
-      const statusRes = await axios.get(
-        `http://localhost:6060/status/${photoId}`
-      );
-      if (statusRes.data.status === "done") {
-        setImageUrl(
-          `https://katenics3.s3.ap-southeast-2.amazonaws.com/processed/${photoId}`
+      const updatedImageUrls = [...imageUrl]; // Copy the existing image URLs
+      let completedImages = 0;
+      
+      for (let i = 0; i < photoId.length; i++) {
+        const statusRes = await axios.get(
+          `http://localhost:6060/status/${photoId[i]}`
         );
+        
+        if (statusRes.data.status === "done") {
+          updatedImageUrls[i] = `https://katenics3.s3.ap-southeast-2.amazonaws.com/processed/${photoId[i]}`;
+          completedImages++;
+        }
+      }
+  
+      console.log(`Completed images: ${completedImages}`);
+  
+      if (completedImages === photoId.length) {
+        console.log(updatedImageUrls)
         setProcessing(false);
+        setImageUrl(updatedImageUrls);
       } else {
         setTimeout(checkImageStatus, 5000);
       }
@@ -94,7 +113,7 @@ function App() {
       setProcessing(false);
     }
   };
-
+  
   function downloadImage(url) {
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -111,6 +130,8 @@ function App() {
   }, [photoId]);
 
   return (
+
+
     <div>
       <h1>Insta Story Shape Shifter</h1>
       <p>
@@ -127,7 +148,7 @@ function App() {
                 >
                   Original Image
                 </p>
-                <div className="image-container">
+                <div className="image-container">                  
                   {originalUrl && (
                     <img
                       src={originalUrl}
@@ -163,7 +184,7 @@ function App() {
                 <div className="image-container mt-2">
                   {imageUrl ? (
                     <img
-                      src={imageUrl}
+                      src={imageUrl[0]}
                       alt="Processed Image"
                       className="img-fluid"
                     />
@@ -215,7 +236,7 @@ function App() {
 
             {imageUrl && (
               <button
-                onClick={() => downloadImage(imageUrl)}
+                onClick={() => downloadImage(imageUrl[0])}
                 className="btn btn-info ml-2"
               >
                 Download Image
@@ -224,6 +245,7 @@ function App() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }
