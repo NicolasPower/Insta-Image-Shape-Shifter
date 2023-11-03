@@ -1,5 +1,5 @@
 require("dotenv").config();
-const axios = require("axios")
+const axios = require("axios");
 const express = require("express");
 const cors = require("cors");
 const Multer = require("multer");
@@ -28,6 +28,7 @@ app.post("/upload", upload.single("my_file"), async (req, res) => {
   try {
     const fileBuffer = req.file.buffer;
     const format = req.body.format;
+    const quality = req.body.quality;
     // Generate a unique filename using uuid
     const filename = uuidv4();
 
@@ -46,6 +47,7 @@ app.post("/upload", upload.single("my_file"), async (req, res) => {
       MessageBody: JSON.stringify({
         filename: filename,
         format: format,
+        quality: quality,
       }),
       QueueUrl: sqsQueueUrl,
     };
@@ -78,33 +80,56 @@ app.get("/status/:id", async (req, res) => {
 
 app.get("/fetchImage/:id", (req, res) => {
   const s3Url = `https://katenics3.s3.ap-southeast-2.amazonaws.com/processed/${req.params.id}`;
-  
+
   axios({
     method: "get",
     url: s3Url,
     responseType: "stream", // Set the response type to stream
   })
-    .then(response => {
+    .then((response) => {
       res.setHeader("Content-Type", "image/jpeg");
       response.data.pipe(res); // Pipe the response directly to the Express response
     })
-    .catch(error => {
+    .catch((error) => {
       console.error(error);
       res.status(500).send("Error fetching image from S3.");
     });
 });
 
-const determineDimensions = (format) => {
+const determineDimensions = (format, quality) => {
+  console.log(`determineDimensions - format: ${format}, quality: ${quality}`); // Log the inputs
+
+  let dimensions;
   switch (format) {
     case "1:1 Square":
-      return { width: 1080, height: 1080 };
+      dimensions = {
+        High: { width: 1080, height: 1080, dpi: 600 },
+        Medium: { width: 500, height: 500, dpi: 300 },
+        Low: { width: 200, height: 200, dpi: 75 },
+      };
+      break;
     case "4:5 Portrait":
-      return { width: 864, height: 1080 };
+      dimensions = {
+        High: { width: 864, height: 1080, dpi: 600 },
+        Medium: { width: 400, height: 500, dpi: 300 },
+        Low: { width: 160, height: 200, dpi: 75 },
+      };
+      break;
     case "16:9 Landscape":
-      return { width: 1920, height: 1080 };
+      dimensions = {
+        High: { width: 1920, height: 1080, dpi: 600 },
+        Medium: { width: 800, height: 450, dpi: 300 },
+        Low: { width: 320, height: 180, dpi: 75 },
+      };
+      break;
     default:
-      return { width: 1080, height: 1920 }; // Defaults to '9:16 Instagram Story'
+      dimensions = {
+        High: { width: 1080, height: 1920, dpi: 600 },
+        Medium: { width: 500, height: 900, dpi: 300 },
+        Low: { width: 200, height: 360, dpi: 75 },
+      }; // Defaults to '9:16 Instagram Story'
   }
+  return dimensions[quality];
 };
 
 const processSQSMessages = async () => {
@@ -122,7 +147,12 @@ const processSQSMessages = async () => {
         const body = JSON.parse(message.Body);
         const filename = body.filename;
         const format = body.format;
-        const dimensions = determineDimensions(format);
+        const quality = body.quality;
+        console.log(
+          `processSQSMessages - filename: ${filename}, format: ${format}, quality: ${quality}`
+        ); // Log the values
+
+        const dimensions = determineDimensions(format, quality);
         // Download the image from S3
         const s3Data = await s3
           .getObject({
@@ -133,7 +163,11 @@ const processSQSMessages = async () => {
 
         // Process the image using Sharp (e.g., resize)
         const processedImage = await sharp(s3Data.Body)
-          .resize(dimensions.width, dimensions.height)
+          .resize({
+            width: dimensions.width,
+            height: dimensions.height,
+            density: dimensions.dpi,
+          })
           .toBuffer();
 
         // Upload the processed image back to S3, for this example, in a 'processed' directory

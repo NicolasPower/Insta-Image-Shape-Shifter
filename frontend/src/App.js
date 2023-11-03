@@ -18,6 +18,7 @@ function App() {
   const [originalUrl, setOriginalUrl] = useState("");
   const [processing, setProcessing] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState("9:16 Instagram Story");
+  const [selectedQuality, setSelectedQuality] = useState("High");
   const [currentIndex, setCurrentIndex] = useState(0);
   const fileInputRef = useRef();
   const folderInputRef = useRef();
@@ -102,6 +103,7 @@ function App() {
         const data = new FormData();
         data.append("my_file", selectedFile.file);
         data.append("format", selectedFormat);
+        data.append("quality", selectedQuality);
 
         const uploadRes = await axios.post(
           "http://localhost:6060/upload",
@@ -221,10 +223,8 @@ function App() {
 
   return (
     <div>
-      <h1>Insta Story Shape Shifter</h1>
-      <p>
-        Upload any image and we will resize it to fit the 9:16 Instagram story
-      </p>
+      <h1>Insta Image Shape Shifter</h1>
+      <p>Upload any image and we will resize it to fit your needs!</p>
       <div className="App container">
         <div className="row">
           {file.length > 0 && file[currentIndex] ? (
@@ -257,18 +257,29 @@ function App() {
                     Processed Image {currentIndex + 1}
                   </p>
                   {file && (
-                    <select
-                      value={selectedFormat}
-                      onChange={(e) => setSelectedFormat(e.target.value)}
-                      style={{ verticalAlign: "middle", marginTop: 10 }}
-                    >
-                      <option value="9:16 Instagram Story">
-                        9:16 Instagram Story
-                      </option>
-                      <option value="1:1 Square">1:1 Square</option>
-                      <option value="4:5 Portrait">4:5 Portrait</option>
-                      <option value="16:9 Landscape">16:9 Landscape</option>
-                    </select>
+                    <>
+                      <select
+                        value={selectedFormat}
+                        onChange={(e) => setSelectedFormat(e.target.value)}
+                        style={{ verticalAlign: "middle", marginTop: 10 }}
+                      >
+                        <option value="9:16 Instagram Story">
+                          9:16 Instagram Story
+                        </option>
+                        <option value="1:1 Square">1:1 Square</option>
+                        <option value="4:5 Portrait">4:5 Portrait</option>
+                        <option value="16:9 Landscape">16:9 Landscape</option>
+                      </select>
+                      <select
+                        value={selectedQuality}
+                        onChange={(e) => setSelectedQuality(e.target.value)}
+                        style={{ verticalAlign: "middle", marginTop: 10 }}
+                      >
+                        <option value="High">High Quality</option>
+                        <option value="Medium">Medium Quality</option>
+                        <option value="Low">Low Quality</option>
+                      </select>
+                    </>
                   )}
                 </div>
                 <div className="image-container mt-2">
