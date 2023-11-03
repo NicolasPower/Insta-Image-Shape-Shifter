@@ -38,23 +38,28 @@ html {
 }
 
 .img-fluid {
-  max-width: 100%; /* Ensures the image doesn't overflow horizontally */
-  height: auto; /* Maintains the aspect ratio while resizing */
-  max-height: 100%; /* Ensures the image doesn't overflow vertically */
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
   display: block;
   margin: 0 auto;
 }
 
 .buttons-container {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
   gap: 10px;
+  padding-bottom: 5px;
+  padding-top: 5px;
 }
 
 .btn {
-  width: max-content;
+  width: 160px;
+}
+
+.btn-next-prev {
+  width: 100px;
+  font-size: 20px;
+  color: #0f0522;
+  border: none;
 }
 .fa-camera {
   color: #0f0522;
@@ -67,11 +72,31 @@ html {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 65vh;
+  height: 60vh;
   background-color: #f2f2f2;
   border: 2px dashed #f2f2f2;
 }
 
 .img-title {
   color: black;
+}
+
+.modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  display: flex;
+  gap: 10px;
 }
