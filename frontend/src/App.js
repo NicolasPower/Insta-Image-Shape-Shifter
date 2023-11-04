@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "font-awesome/css/font-awesome.min.css";
 import { faCamera } from "@fortawesome/free-solid-svg-icons";
 import JSZip from "jszip";
+import { fetchConfig } from "./utils/fetchConfig";
 
 function App() {
   const [file, setFile] = useState([]);
@@ -23,7 +24,8 @@ function App() {
   const fileInputRef = useRef();
   const folderInputRef = useRef();
   const [isModalVisible, setIsModalVisible] = useState(false);
-
+  const [instance, setInstance] = useState("");
+  
   const handlePrev = () => {
     setCurrentIndex((prevIndex) => (prevIndex - 1 + file.length) % file.length);
   };
@@ -93,77 +95,94 @@ function App() {
 
   const handleUpload = async () => {
     try {
-      setProcessing(true);
-      setImageUrl("");
-
-      const photoIds = []; // Array to store the photo IDs for each file
-
-      for (const selectedFile of file) {
-        // Assuming you have an array named "files" with the selected files
-        const data = new FormData();
-        data.append("my_file", selectedFile.file);
-        data.append("format", selectedFormat);
-        data.append("quality", selectedQuality);
-
-        const uploadRes = await axios.post(
-          "http://localhost:6060/upload",
-          data
-        );
-        photoIds.push(uploadRes.data.photoId);
+      const instanceUrl = await fetchConfig();
+      if (instanceUrl !== "") {
+        setInstance(instanceUrl);
+        setProcessing(true);
+        setImageUrl("");
+  
+        const photoIds = []; // Array to store the photo IDs for each file
+  
+        for (const selectedFile of file) {
+          // Assuming you have an array named "files" with the selected files
+          const data = new FormData();
+          data.append("my_file", selectedFile.file);
+          data.append("format", selectedFormat);
+          data.append("quality", selectedQuality);
+  
+          const uploadRes = await axios.post(
+            `${instanceUrl}/upload`,
+            data
+          );
+          photoIds.push(uploadRes.data.photoId);
+        }
+  
+        setPhotoId(photoIds); // Assuming you have a state variable to store the uploaded photo IDs
+      } else {
+        alert("Instance URL is empty. Please fetch a valid URL first.");
       }
-
-      setPhotoId(photoIds); // Assuming you have a state variable to store the uploaded photo IDs
     } catch (error) {
       alert(error.message);
       setProcessing(false);
     }
   };
+  
 
   const checkImageStatus = async () => {
     try {
-      const updatedImageUrls = [...imageUrl]; // Copy the existing image URLs
-      let completedImages = 0;
-
-      for (let i = 0; i < photoId.length; i++) {
-        const statusRes = await axios.get(
-          `http://localhost:6060/status/${photoId[i]}`
-        );
-
-        if (statusRes.data.status === "done") {
-          updatedImageUrls[
-            i
-          ] = `https://katenics3.s3.ap-southeast-2.amazonaws.com/processed/${photoId[i]}`;
-          completedImages++;
+      if (instance !== "") {
+        const updatedImageUrls = [...imageUrl]; // Copy the existing image URLs
+        let completedImages = 0;
+  
+        for (let i = 0; i < photoId.length; i++) {
+          const statusRes = await axios.get(
+            `${instance}/status/${photoId[i]}`
+          );
+  
+          if (statusRes.data.status === "done") {
+            updatedImageUrls[
+              i
+            ] = `https://katenics3.s3.ap-southeast-2.amazonaws.com/processed/${photoId[i]}`;
+            completedImages++;
+          }
         }
-      }
-
-      console.log(`Completed images: ${completedImages}`);
-
-      if (completedImages === photoId.length) {
-        console.log(updatedImageUrls);
-        setProcessing(false);
-        setImageUrl(updatedImageUrls);
+  
+        console.log(`Completed images: ${completedImages}`);
+  
+        if (completedImages === photoId.length) {
+          console.log(updatedImageUrls);
+          setProcessing(false);
+          setImageUrl(updatedImageUrls);
+        } else {
+          setTimeout(checkImageStatus, 5000);
+        }
       } else {
-        setTimeout(checkImageStatus, 5000);
+        alert("Instance URL is empty. Please fetch a valid URL first.");
       }
     } catch (error) {
       console.error(error);
       setProcessing(false);
     }
   };
+  
 
   function downloadImages(urls) {
+    if (instance === "") {
+      alert("Instance URL is empty. Please fetch a valid URL first.");
+      return;
+    }
+  
     if (urls.length === 1) {
       // If there's only one image, download it as a JPEG
       const photoId = urls[0];
       axios
-        .get(`http://localhost:6060/fetchImage/${photoId}`, {
+        .get(`${instance}/fetchImage/${photoId}`, {
           responseType: "blob",
         })
         .then((response) => {
           const blob = new Blob([response.data], { type: "image/jpeg" });
           const singleImageFile = URL.createObjectURL(blob);
-
+  
           const anchor = document.createElement("a");
           anchor.href = singleImageFile;
           anchor.download = `resized_image.jpeg`;
@@ -180,10 +199,10 @@ function App() {
       // If there's more than one image, download them as a ZIP
       const zip = new JSZip();
       const downloadPromises = [];
-
+  
       urls.forEach((photoId, index) => {
         const downloadPromise = axios
-          .get(`http://localhost:6060/fetchImage/${photoId}`, {
+          .get(`${instance}/fetchImage/${photoId}`, {
             responseType: "blob",
           })
           .then((response) => {
@@ -196,14 +215,14 @@ function App() {
               `Error downloading image for photoId ${photoId}: ${error}`
             );
           });
-
+  
         downloadPromises.push(downloadPromise);
       });
-
+  
       Promise.all(downloadPromises).then(() => {
         zip.generateAsync({ type: "blob" }).then((content) => {
           const zipFile = URL.createObjectURL(content);
-
+  
           const anchor = document.createElement("a");
           anchor.href = zipFile;
           anchor.download = `resized_images.zip`;
@@ -214,6 +233,7 @@ function App() {
       });
     }
   }
+  
 
   useEffect(() => {
     if (photoId) {
