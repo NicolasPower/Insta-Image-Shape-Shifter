@@ -22,7 +22,16 @@ const upload = Multer({
 });
 
 const app = express();
-app.use(cors());
+
+const corsOptions = {
+  origin: [
+    "http://katenic-frontend2.s3-website-ap-southeast-2.amazonaws.com",
+    // Add other origins you want to allow here
+  ],
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+};
+
+app.use(cors(corsOptions));
 
 app.post("/upload", upload.single("my_file"), async (req, res) => {
   try {
