@@ -25,7 +25,7 @@ function App() {
   const folderInputRef = useRef();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [instance, setInstance] = useState("");
-  
+
   const handlePrev = () => {
     setCurrentIndex((prevIndex) => (prevIndex - 1 + file.length) % file.length);
   };
@@ -100,23 +100,20 @@ function App() {
         setInstance(instanceUrl);
         setProcessing(true);
         setImageUrl("");
-  
+
         const photoIds = []; // Array to store the photo IDs for each file
-  
+
         for (const selectedFile of file) {
           // Assuming you have an array named "files" with the selected files
           const data = new FormData();
           data.append("my_file", selectedFile.file);
           data.append("format", selectedFormat);
           data.append("quality", selectedQuality);
-  
-          const uploadRes = await axios.post(
-            `${instanceUrl}/upload`,
-            data
-          );
+
+          const uploadRes = await axios.post(`${instanceUrl}/upload`, data);
           photoIds.push(uploadRes.data.photoId);
         }
-  
+
         setPhotoId(photoIds); // Assuming you have a state variable to store the uploaded photo IDs
       } else {
         alert("Instance URL is empty. Please fetch a valid URL first.");
@@ -126,19 +123,16 @@ function App() {
       setProcessing(false);
     }
   };
-  
 
   const checkImageStatus = async () => {
     try {
       if (instance !== "") {
         const updatedImageUrls = [...imageUrl]; // Copy the existing image URLs
         let completedImages = 0;
-  
+
         for (let i = 0; i < photoId.length; i++) {
-          const statusRes = await axios.get(
-            `${instance}/status/${photoId[i]}`
-          );
-  
+          const statusRes = await axios.get(`${instance}/status/${photoId[i]}`);
+
           if (statusRes.data.status === "done") {
             updatedImageUrls[
               i
@@ -146,9 +140,9 @@ function App() {
             completedImages++;
           }
         }
-  
+
         console.log(`Completed images: ${completedImages}`);
-  
+
         if (completedImages === photoId.length) {
           console.log(updatedImageUrls);
           setProcessing(false);
@@ -164,14 +158,13 @@ function App() {
       setProcessing(false);
     }
   };
-  
 
   function downloadImages(urls) {
     if (instance === "") {
       alert("Instance URL is empty. Please fetch a valid URL first.");
       return;
     }
-  
+
     if (urls.length === 1) {
       // If there's only one image, download it as a JPEG
       const photoId = urls[0];
@@ -182,7 +175,7 @@ function App() {
         .then((response) => {
           const blob = new Blob([response.data], { type: "image/jpeg" });
           const singleImageFile = URL.createObjectURL(blob);
-  
+
           const anchor = document.createElement("a");
           anchor.href = singleImageFile;
           anchor.download = `resized_image.jpeg`;
@@ -199,7 +192,7 @@ function App() {
       // If there's more than one image, download them as a ZIP
       const zip = new JSZip();
       const downloadPromises = [];
-  
+
       urls.forEach((photoId, index) => {
         const downloadPromise = axios
           .get(`${instance}/fetchImage/${photoId}`, {
@@ -215,14 +208,14 @@ function App() {
               `Error downloading image for photoId ${photoId}: ${error}`
             );
           });
-  
+
         downloadPromises.push(downloadPromise);
       });
-  
+
       Promise.all(downloadPromises).then(() => {
         zip.generateAsync({ type: "blob" }).then((content) => {
           const zipFile = URL.createObjectURL(content);
-  
+
           const anchor = document.createElement("a");
           anchor.href = zipFile;
           anchor.download = `resized_images.zip`;
@@ -233,7 +226,6 @@ function App() {
       });
     }
   }
-  
 
   useEffect(() => {
     if (photoId) {
@@ -321,7 +313,10 @@ function App() {
                   ) : null}
                 </div>
               </div>
-              <div className="buttons-container col-12 d-flex justify-content-center mt-3">
+              <div
+                className="buttons-container col-12 d-flex justify-content-center"
+                style={{ padding: 0, margin: 0 }}
+              >
                 {file.length > 1 && (
                   <>
                     <div
@@ -330,6 +325,8 @@ function App() {
                         cursor: "pointer",
                         fontSize: "40px",
                         color: "#0f0522",
+                        padding: 0,
+                        margin: 0,
                       }}
                     >
                       &#11013;
@@ -340,6 +337,8 @@ function App() {
                         cursor: "pointer",
                         fontSize: "40px",
                         color: "#0f0522",
+                        padding: 0,
+                        margin: 0,
                       }}
                     >
                       &#11157;

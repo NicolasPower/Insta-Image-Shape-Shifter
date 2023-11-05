@@ -9,6 +9,11 @@ const { v4: uuidv4 } = require("uuid");
 const port = 6060;
 let sqsQueueUrl;
 AWS.config.update({ region: "ap-southeast-2" });
+// Before calling S3
+console.log("S3 Bucket Name:", process.env.S3_BUCKET_NAME);
+
+// Before calling SQS
+console.log("SQS Queue Name:", process.env.SQS_QUEUE_NAME);
 
 // AWS S3 Configuration
 const s3 = new AWS.S3();
@@ -22,16 +27,7 @@ const upload = Multer({
 });
 
 const app = express();
-
-const corsOptions = {
-  origin: [
-    "http://katenic-frontend2.s3-website-ap-southeast-2.amazonaws.com",
-    // Add other origins you want to allow here
-  ],
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 
 app.post("/upload", upload.single("my_file"), async (req, res) => {
   try {
